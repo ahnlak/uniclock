@@ -13,16 +13,29 @@
 
 #pragma once
 
-#ifndef USB_VENDOR_ID
-#define USB_VENDOR_ID 0xCafe
-#endif
+/* Constants. */
 
-#ifndef USB_VENDOR_STR
-#define USB_VENDOR_STR "GalacticUnicorn"
-#endif
+#define UC_CONFIG_FILENAME    "config.txt"
+#define UC_SSID_MAXLEN        32
+#define UC_PASSWORD_MAXLEN    64
 
-#ifndef USB_PRODUCT_STR
-#define USB_PRODUCT_STR "Device"
-#endif
+#define UC_CONFIG_CHECK_MS    60000
+#define UC_RENDER_MS          250
+
+
+/* Structures. */
+
+typedef struct
+{
+  char    wifi_ssid[UC_SSID_MAXLEN+1];
+  char    wifi_password[UC_PASSWORD_MAXLEN+1];
+} uc_config_t;
+
+
+/* Function prototypes. */
+
+uint32_t  config_read( uc_config_t * );
+bool      config_changed( uint32_t );
+
 
 /* End of file uniclock.h */

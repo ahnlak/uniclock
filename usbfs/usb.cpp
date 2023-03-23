@@ -1,178 +1,193 @@
+/*
+ * usbfs/usb.cpp - part of UniClock, a Clock for the Galactic Unicorn.
+ *
+ * UniClock is an enhance clock / calendar display for the beautiful Galactic
+ * Unicorn.
+ *
+ * This provides all the USB handling routines; it's largely 'borrowed' from
+ * DaftFreak's awesome work on the PicoSystem, but simplified for our needs.
+ * 
+ * Copyright (C) 2023 Pete Favelle <ahnlak@ahnlak.com>
+ * Released under the MIT License; see LICENSE for details.
+ */
 
-#include <cstring>
+/* System headers. */
+
+#include <stdarg.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+/* Local headers. */
 
 #include "tusb.h"
-
 #include "usbfs.hpp"
 
-// msc
-static bool storage_ejected = false;
 
-void tud_mount_cb() {
-  storage_ejected = false;
+/* Module variables. */
+
+static bool     m_mounted = true;
+
+
+/* Functions.*/
+
+/*
+ * tinyusb callbacks.
+ */
+
+void tud_mount_cb( void )
+{  
+  m_mounted = true;
 }
 
-void tud_msc_inquiry_cb(uint8_t lun, uint8_t vendor_id[8], uint8_t product_id[16], uint8_t product_rev[4]) {
-  (void) lun;
+void tud_msc_inquiry_cb( uint8_t p_lun, uint8_t p_vendor_id[8], 
+                         uint8_t p_product_id[16], uint8_t p_product_rev[4] )
+{
+  const char *l_vid = USB_VENDOR_STR;
+  const char *l_pid = USB_PRODUCT_STR " Storage";
+  const char *l_rev = "1.0";
 
-  const char vid[] = USB_VENDOR_STR;
-  const char pid[] = USB_PRODUCT_STR " Storage";
-  const char rev[] = "1.0";
-
-  memcpy(vendor_id  , vid, strlen(vid));
-  memcpy(product_id , pid, strlen(pid));
-  memcpy(product_rev, rev, strlen(rev));
+  memcpy( p_vendor_id  , l_vid, strlen(l_vid) );
+  memcpy( p_product_id , l_pid, strlen(l_pid) );
+  memcpy( p_product_rev, l_rev, strlen(l_rev) );
 }
 
-bool tud_msc_test_unit_ready_cb(uint8_t lun) {
-  if(storage_ejected) {
-    tud_msc_set_sense(lun, SCSI_SENSE_NOT_READY, 0x3a, 0x00);
+bool tud_msc_test_unit_ready_cb( uint8_t p_lun )
+{
+  if( !m_mounted )
+  {
+    tud_msc_set_sense( p_lun, SCSI_SENSE_NOT_READY, 0x3a, 0x00 );
     return false;
   }
 
   return true;
 }
 
-void tud_msc_capacity_cb(uint8_t lun, uint32_t *block_count, uint16_t *block_size) {
-  (void) lun;
-
-  storage_get_size(*block_size, *block_count);
+void tud_msc_capacity_cb( uint8_t p_lun, 
+                          uint32_t *p_block_count, uint16_t *p_block_size )
+{
+  storage_get_size( *p_block_size, *p_block_count );
 }
 
-bool tud_msc_start_stop_cb(uint8_t lun, uint8_t power_condition, bool start, bool load_eject) {
-  (void) lun;
-  (void) power_condition;
-
-  if(load_eject) {
-    if (start) {
-    } else
-      storage_ejected = true;
+bool tud_msc_start_stop_cb( uint8_t p_lun, uint8_t p_power_condition,
+                            bool p_start, bool p_load_eject )
+{
+  if( p_load_eject )
+  {
+    if ( !p_start )
+    {
+      m_mounted = false;
+    }
   }
 
   return true;
 }
 
-int32_t tud_msc_read10_cb(uint8_t lun, uint32_t lba, uint32_t offset, void *buffer, uint32_t bufsize) {
-  (void) lun;
-
-  return storage_read(lba, offset, buffer, bufsize);
+int32_t tud_msc_read10_cb( uint8_t p_lun, uint32_t p_lba,
+                           uint32_t p_offset, void *p_buffer, uint32_t p_bufsize )
+{
+  return storage_read( p_lba, p_offset, p_buffer, p_bufsize );
 }
 
-int32_t tud_msc_write10_cb(uint8_t lun, uint32_t lba, uint32_t offset, uint8_t *buffer, uint32_t bufsize) {
-  (void) lun;
-
-  return storage_write(lba, offset, buffer, bufsize);
+int32_t tud_msc_write10_cb( uint8_t p_lun, uint32_t p_lba,
+                            uint32_t p_offset, uint8_t *p_buffer, uint32_t p_bufsize )
+{
+  return storage_write( p_lba, p_offset, p_buffer, p_bufsize );
 }
 
-int32_t tud_msc_scsi_cb(uint8_t lun, uint8_t const scsi_cmd[16], void* buffer, uint16_t bufsize) {
-  uint16_t resplen = 0;
+int32_t tud_msc_scsi_cb( uint8_t p_lun, uint8_t const p_scsi_cmd[16],
+                         void *p_buffer, uint16_t p_bufsize )
+{
+  int32_t  l_retval;
 
-  switch (scsi_cmd[0]) {
+  switch ( p_scsi_cmd[0] )
+  {
     case SCSI_CMD_PREVENT_ALLOW_MEDIUM_REMOVAL:
       // Host is about to read/write etc ... better not to disconnect disk
-      resplen = 0;
-    break;
+      l_retval = 0;
+      break;
 
     default:
       // Set Sense = Invalid Command Operation
-      tud_msc_set_sense(lun, SCSI_SENSE_ILLEGAL_REQUEST, 0x20, 0x00);
+      tud_msc_set_sense( p_lun, SCSI_SENSE_ILLEGAL_REQUEST, 0x20, 0x00 );
 
       // negative means error -> tinyusb could stall and/or response with failed status
-      resplen = -1;
-    break;
+      l_retval = -1;
+      break;
   }
 
-  return resplen;
+  return l_retval;
 }
 
-bool tud_msc_is_writable_cb(uint8_t lun) {
+bool tud_msc_is_writable_cb( uint8_t p_lun )
+{
   return true;
 }
 
-// cdc
-static bool multiplayer_enabled = false;
-static bool peer_connected = false;
 
-static char cur_header[8];
-static int header_pos = 0;
+/*
+ * Higher level USB functions; these are the ones exposed to our program.
+ */
 
-static uint16_t mp_buffer_len, mp_buffer_off;
-static uint8_t *mp_buffer = nullptr;
+/*
+ * init - called to initialise the tinyusb library.
+ */
 
-static void send_all(const void *buffer, uint32_t len) {
-  uint32_t done = tud_cdc_write(buffer, len);
-
-  while(done < len) {
-    tud_task();
-    if(!tud_ready())
-      break;
-
-    done += tud_cdc_write((const char *)buffer + done, len - done);
-  }
-}
-
-void usb_init() {
+void usb_init( void )
+{
+  /* Initialise the tinyusb library. */
   tusb_init();
+
+  /* All done. */
+  return;
 }
 
-void usb_update() {
+/*
+ * update - called regularly to process any outstanding USB work.
+ */
+
+void usb_update( void )
+{
+  /* Ask tinyusb to run any device tasks. */
   tud_task();
 
-  if(!tud_ready()) { // tud_cdc_connected returns false with STM USB host
-    peer_connected = false;
-  }
+  /* All done. */
+  return;
+}
 
-  while(tud_cdc_available()) {
-    // match header
-    if(header_pos < 8) {
-      cur_header[header_pos] = tud_cdc_read_char();
 
-      const char *expected = "32BL";
-      if(header_pos >= 4 || cur_header[header_pos] == expected[header_pos])
-        header_pos++;
-      else
-        header_pos = 0;
-    } else {
+/*
+ * debug - sends a debug message over CDC; we treat this channel as write-only.
+ */
 
-      // get USER packet
-      if(mp_buffer) {
-        mp_buffer_off += tud_cdc_read(mp_buffer + mp_buffer_off, mp_buffer_len - mp_buffer_off);
+void usb_debug( const char *p_message, ... )
+{
+  va_list   l_args;
+  char      l_buffer[64];
+  int       l_msglen;
+  uint32_t  l_sentbytes;
 
-        if(mp_buffer_off == mp_buffer_len) {
-          delete[] mp_buffer;
-          mp_buffer = nullptr;
-          header_pos = 0;
-        }
-        continue;
-      }
+  /* Assemble the debug message. */
+  va_start( l_args, p_message );
+  l_msglen = vsnprintf( l_buffer, 60, p_message, l_args );
+  strcat( l_buffer, "\r\n" );
+  l_msglen += 2;
+  va_end( l_args );
 
-      // got header
-      if(memcmp(cur_header + 4, "MLTI", 4) == 0) {
-        // handshake packet
-        peer_connected = tud_cdc_read_char() != 0;
-
-        // done
-        header_pos = 0;
-      } else if(memcmp(cur_header + 4, "USER", 4) == 0) {
-        if(tud_cdc_available() < 2)
-          break;
-
-        tud_cdc_read(&mp_buffer_len, 2);
-        mp_buffer_off = 0;
-        mp_buffer = new uint8_t[mp_buffer_len];
-
-      } else {
-        printf("got: %c%c%c%c%c%c%c%c\n", cur_header[0], cur_header[1], cur_header[2], cur_header[3], cur_header[4], cur_header[5], cur_header[6], cur_header[7]);
-        header_pos = 0;
-      }
+  /* And send it to USB. */
+  l_sentbytes = tud_cdc_write( l_buffer, l_msglen );
+  while ( l_sentbytes < l_msglen )
+  {
+    tud_task();
+    if ( !tud_ready() )
+    {
+      break;
     }
+    l_sentbytes += tud_cdc_write( l_buffer + l_sentbytes, l_msglen - l_sentbytes );
   }
+
+  /* All done. */
+  return;
 }
 
-void usb_debug(const char *message) {
-  if(!tud_cdc_connected())
-    return;
-
-  auto len = strlen(message);
-  send_all(message, len);
-}
+/* End of file usb.cpp */

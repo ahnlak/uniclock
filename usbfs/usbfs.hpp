@@ -16,24 +16,15 @@
 
 #pragma once
 
+#include "ff.h"
 
 /* Constants. */
 
-#ifndef USB_VENDOR_ID
-#define USB_VENDOR_ID 0xCafe
-#endif
+#define USB_VENDOR_ID       0xCafe
+#define USB_VENDOR_STR      "GalacticUnicorn"
+#define USB_PRODUCT_STR     "Device"
 
-#ifndef USB_VENDOR_STR
-#define USB_VENDOR_STR "GalacticUnicorn"
-#endif
-
-#ifndef USB_PRODUCT_STR
-#define USB_PRODUCT_STR "Device"
-#endif
-
-#ifndef UFS_LABEL
-#define UFS_LABEL       "GUnicorn"
-#endif
+#define UFS_LABEL           "GUnicorn"
 
 
 /* Function prototypes. */
