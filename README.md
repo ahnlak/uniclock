@@ -1,20 +1,32 @@
-# Pico C++ Boilerplate Project <!-- omit in toc -->
+# UniClock
 
-This project is intended as a starting point for working with the Pico SDK and Pimoroni Libraries in C++.
+This project is a more fully rounded Clock for the Galactic Unicorn.
 
-- [Before you start](#before-you-start)
-- [Preparing your build environment](#preparing-your-build-environment)
-- [Grab the Pimoroni libraries](#grab-the-pimoroni-libraries)
-- [Clone this boilerplate](#clone-this-boilerplate)
-- [Prepare Visual Studio Code](#prepare-visual-studio-code)
-- [Prepare your project](#prepare-your-project)
-- [Pick your LICENSE](#pick-your-license)
+Features include:
 
-## Before you start
+- [ ] fixed width font, to avoid the annoying shift in display
+- [ ] simple file-based WiFi configuration
+- [ ] NTP support
+- [ ] comprehensive timezone handling
+- [ ] automatic brightness adjustment for ambient light
+- [ ] date display
 
-It's easier if you make a `pico` directory or similar in which you keep the SDK, Pimoroni Libraries and your projects alongside each other. This makes it easier to include libraries.
 
-## Preparing your build environment
+## WiFi Configuration
+
+To make things easier to commission, UniClock mounts as a drive when plugged
+into your computer's USB port. This allows you to modify the configuration
+file to define your WiFi connection details, timezone and other preferences.
+
+
+## Building
+
+If you wish to build from source rather than grabbing the latest release, the
+usual build commands apply. These instructions are for Linux or Linux-like
+environments; things may (will?) be different under Windows.
+
+
+### Basic build requirements
 
 Install build requirements:
 
@@ -41,43 +53,21 @@ You should should ensure your `PICO_SDK_PATH` environment variable is set by `~/
 export PICO_SDK_PATH="/path/to/pico-sdk"
 ```
 
-## Grab the Pimoroni libraries
+
+### Fetch both this repository, and the Pimoroni Pico libraries
 
 ```
 git clone https://github.com/pimoroni/pimoroni-pico
+git clone https://github.com/ahnlak/uniclock
+cd uniclock
 ```
 
-## Clone this boilerplate
+
+### Compile it
 
 ```
-git clone https://github.com/pimoroni/pico-boilerplate
-cd pico-boilerplate
+mkdir build
+cd build
+cmake ..
+make
 ```
-
-If you have not or don't want to set `PICO_SDK_PATH` you can edit `.vscode/settings.json` to pass the path directly to CMake.
-
-## Prepare Visual Studio Code
-
-Open VS Code and hit `Ctrl+Shift+P`.
-
-Type `Install` and select `Extensions: Install Extensions`.
-
-Make sure you install:
-
-1. C/C++
-2. CMake
-3. CMake Tools
-4. Cortex-Debug (optional: for debugging via a Picoprobe or Pi GPIO)
-5. Markdown All in One (recommended: for preparing your own README.md)
-
-## Prepare your project
-
-Edit `CMakeLists.txt` and follow the instructions, you should make sure you:
-
-1. edit your project name
-2. include the libraries you need
-2. link the libraries to your project
-
-## Pick your LICENSE
-
-We've included a copy of BSD 3-Clause License to match that used in Raspberry Pi's Pico SDK and Pico Examples. You should review this and check it's appropriate for your project before publishing your code.
