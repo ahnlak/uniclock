@@ -71,6 +71,16 @@ void ufs_init( void )
 
 
 /*
+ * remount - need to remount the filesystem to pick up external changes.
+ */
+
+void ufs_remount( void )
+{
+  f_mount( &m_fatfs, "", 1 );
+}
+
+
+/*
  * FatFS glue functions; used to link the filesystem to the storage. This is
  * largely poached (along with a lot of this USB stuff) from @DaftFreak's 
  * amazing work on https://github.com/32blit/32blit-sdk/

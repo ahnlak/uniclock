@@ -34,6 +34,7 @@ int32_t   storage_read( uint32_t, uint32_t, void *, uint32_t );
 int32_t   storage_write( uint32_t, uint32_t, const uint8_t *, uint32_t );
 
 void      ufs_init( void );
+void      ufs_remount( void );
 
 void      usb_init( void );
 void      usb_update( void );

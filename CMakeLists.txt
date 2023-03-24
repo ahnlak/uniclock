@@ -19,7 +19,7 @@ pico_sdk_init()
 
 # Define all the source files that go into this
 add_executable(${NAME}
-    uniclock.cpp config.cpp
+    uniclock.cpp config.cpp display.cpp time.cpp
 )
 
 # Include required library definitions

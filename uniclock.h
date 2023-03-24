@@ -13,14 +13,20 @@
 
 #pragma once
 
+#include "libraries/pico_graphics/pico_graphics.hpp"
+
 /* Constants. */
 
 #define UC_CONFIG_FILENAME    "config.txt"
 #define UC_SSID_MAXLEN        32
 #define UC_PASSWORD_MAXLEN    64
+#define UC_NTPSERVER_MAXLEN   64
 
-#define UC_CONFIG_CHECK_MS    60000
+#define UC_CONFIG_CHECK_MS    5000
 #define UC_RENDER_MS          250
+#define UC_NTP_CHECK_MS       60000
+#define UC_NTP_REFRESH_MS     60000
+//#define UC_NTP_REFRESH_MS     3600000
 
 
 /* Structures. */
@@ -29,6 +35,8 @@ typedef struct
 {
   char    wifi_ssid[UC_SSID_MAXLEN+1];
   char    wifi_password[UC_PASSWORD_MAXLEN+1];
+  char    ntp_server[UC_NTPSERVER_MAXLEN+1];
+  int16_t utc_offset_minutes;
 } uc_config_t;
 
 
@@ -36,6 +44,12 @@ typedef struct
 
 uint32_t  config_read( uc_config_t * );
 bool      config_changed( uint32_t );
+
+void      display_init( pimoroni::PicoGraphics * );
+void      display_render( void );
+
+void      time_init( void );
+bool      time_check_sync( const uc_config_t * );
 
 
 /* End of file uniclock.h */

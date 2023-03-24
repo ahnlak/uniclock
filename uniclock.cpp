@@ -21,6 +21,8 @@
 
 #include "uniclock.h"
 #include "usbfs.hpp"
+#include "libraries/pico_graphics/pico_graphics.hpp"
+#include "libraries/galactic_unicorn/galactic_unicorn.hpp"
 
 
 /* Module variables. */
@@ -39,14 +41,29 @@ static uint32_t     m_config_stamp;
 
 int main()
 {
-  absolute_time_t   l_config_check = nil_time;
-  absolute_time_t   l_next_render = nil_time;
+  absolute_time_t             l_config_check = nil_time;
+  absolute_time_t             l_ntp_check = nil_time;
+  absolute_time_t             l_next_render = nil_time;
+  pimoroni::PicoGraphics     *l_graphics;
+  pimoroni::GalacticUnicorn  *l_unicorn;
 
 
-  /* Initial setup stuff. */
+  /* Initial setup stuff - first get Unicorn and Graphics objects. */
+  l_unicorn = new pimoroni::GalacticUnicorn();
+  l_graphics = new pimoroni::PicoGraphics_PenRGB565( 
+    pimoroni::GalacticUnicorn::WIDTH,
+    pimoroni::GalacticUnicorn::HEIGHT,
+    nullptr
+  );
+
+  /* And initialise all the subsystems. */
   stdio_init_all();
   ufs_init();
   usb_init();
+  time_init();
+  display_init( l_graphics );
+  l_unicorn->init();
+  l_unicorn->set_brightness( 0.5f );
 
   /* Fetch the current configuration. */
   m_config_stamp = config_read( &m_config );
@@ -62,8 +79,6 @@ int main()
     if ( time_reached( l_config_check ) )
     {
       /* Check to see if the configuration file has been updated. */
-      usb_debug( "Checking if configuration file has changed..." );
-
       if ( config_changed( m_config_stamp ) )
       {
         /* Then re-read it. */
@@ -77,10 +92,26 @@ int main()
       l_config_check = make_timeout_time_ms( UC_CONFIG_CHECK_MS );
     }
 
+    /* Update our RTC via NTP, on occasions. */
+    if ( time_reached( l_ntp_check ) )
+    {
+      /* Ask for a time sync; we may need to call this repeatedly, to allow */
+      /* for the wifi to become available.                                  */
+      if ( time_check_sync( &m_config ) )
+      {
+        /* Schedule the next check. */
+        l_ntp_check = make_timeout_time_ms( UC_NTP_CHECK_MS );
+      }
+    }
+
     /* Rendering, which we do fairly leisurely. */
     if ( time_reached( l_next_render ) )
     {
       /* Draw the display. */
+      display_render();
+
+      /* Push the display out to the unicorn. */
+      l_unicorn->update( l_graphics );
 
       /* And schedule the next render. */
       l_next_render = make_timeout_time_ms( UC_RENDER_MS );
