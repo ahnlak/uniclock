@@ -14,6 +14,8 @@
 #pragma once
 
 #include "libraries/pico_graphics/pico_graphics.hpp"
+#include "lwip/dns.h"
+#include "lwip/udp.h"
 
 /* Constants. */
 
@@ -27,6 +29,9 @@
 #define UC_NTP_CHECK_MS       60000
 #define UC_NTP_REFRESH_MS     60000
 //#define UC_NTP_REFRESH_MS     3600000
+#define UC_NTP_EPOCH_OFFSET   2208988800L
+#define UC_NTP_PORT           123
+#define UC_NTP_PACKAGE_LEN    48
 
 
 /* Structures. */
@@ -39,6 +44,13 @@ typedef struct
   int16_t utc_offset_minutes;
 } uc_config_t;
 
+typedef struct
+{
+  ip_addr_t       server;
+  struct udp_pcb *socket;
+  uint32_t        ntptime;
+  bool            active_query;
+} uc_ntpstate_t;
 
 /* Function prototypes. */
 

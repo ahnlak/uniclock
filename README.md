@@ -4,9 +4,9 @@ This project is a more fully rounded Clock for the Galactic Unicorn.
 
 Features include:
 
-- [ ] fixed width font, to avoid the annoying shift in display
-- [ ] simple file-based WiFi configuration
-- [ ] NTP support
+- [x] fixed width font, to avoid the annoying shift in display
+- [x] simple file-based WiFi configuration
+- [x] NTP support
 - [ ] comprehensive timezone handling
 - [ ] automatic brightness adjustment for ambient light
 - [ ] date display
@@ -17,6 +17,8 @@ Features include:
 To make things easier to commission, UniClock mounts as a drive when plugged
 into your computer's USB port. This allows you to modify the configuration
 file to define your WiFi connection details, timezone and other preferences.
+
+Edit the `CONFIG.TXT` file with your local details.
 
 
 ## Building
