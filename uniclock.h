@@ -14,6 +14,7 @@
 #pragma once
 
 #include "libraries/pico_graphics/pico_graphics.hpp"
+#include "libraries/galactic_unicorn/galactic_unicorn.hpp"
 #include "lwip/dns.h"
 #include "lwip/udp.h"
 
@@ -26,12 +27,29 @@
 
 #define UC_CONFIG_CHECK_MS    5000
 #define UC_RENDER_MS          250
+#define UC_INPUT_DELAY_MS     250
+#define UC_DIMMER_MS          5000
 #define UC_NTP_CHECK_MS       60000
 #define UC_NTP_REFRESH_MS     60000
 //#define UC_NTP_REFRESH_MS     3600000
 #define UC_NTP_EPOCH_OFFSET   2208988800L
 #define UC_NTP_PORT           123
 #define UC_NTP_PACKAGE_LEN    48
+
+#define UC_HUE_MIDDAY         1.1f
+#define UC_HUE_MIDNIGHT       0.8f
+#define UC_SAT_MIDDAY         1.0f
+#define UC_SAT_MIDNIGHT       1.0f
+#define UC_VAL_MIDDAY         0.8f
+#define UC_VAL_MIDNIGHT       0.3f
+#define UC_HUE_OFFSET         -0.12f
+
+
+typedef enum
+{
+  UC_DISPLAY_TIME,
+  UC_DISPLAY_DATE, UC_DISPLAY_TIMEZONE
+} uc_display_mode_t;
 
 
 /* Structures. */
@@ -57,8 +75,11 @@ typedef struct
 uint32_t  config_read( uc_config_t * );
 bool      config_changed( uint32_t );
 
-void      display_init( pimoroni::PicoGraphics * );
+void      display_init( pimoroni::GalacticUnicorn *, pimoroni::PicoGraphics * );
 void      display_render( void );
+void      display_update_brightness( void );
+void      display_dimmer( void );
+void      display_brighter( void );
 
 void      time_init( void );
 bool      time_check_sync( const uc_config_t * );

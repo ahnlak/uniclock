@@ -8,7 +8,7 @@ Features include:
 - [x] simple file-based WiFi configuration
 - [x] NTP support
 - [ ] comprehensive timezone handling
-- [ ] automatic brightness adjustment for ambient light
+- [x] automatic brightness adjustment for ambient light
 - [ ] date display
 
 

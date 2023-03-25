@@ -42,6 +42,8 @@ static uint32_t     m_config_stamp;
 int main()
 {
   absolute_time_t             l_config_check = nil_time;
+  absolute_time_t             l_dimmer_check = nil_time;
+  absolute_time_t             l_input_delay = nil_time;
   absolute_time_t             l_ntp_check = nil_time;
   absolute_time_t             l_next_render = nil_time;
   pimoroni::PicoGraphics     *l_graphics;
@@ -61,9 +63,8 @@ int main()
   ufs_init();
   usb_init();
   time_init();
-  display_init( l_graphics );
+  display_init( l_unicorn, l_graphics );
   l_unicorn->init();
-  l_unicorn->set_brightness( 0.5f );
 
   /* Fetch the current configuration. */
   m_config_stamp = config_read( &m_config );
@@ -92,6 +93,16 @@ int main()
       l_config_check = make_timeout_time_ms( UC_CONFIG_CHECK_MS );
     }
 
+    /* Adjust the brightness to reflect the ambient light levels. */
+    if ( time_reached( l_dimmer_check ) )
+    {
+      /* Fairly simple operation. */
+      display_update_brightness();
+
+      /* Schedule the next check for a minutes time. */
+      l_dimmer_check = make_timeout_time_ms( UC_DIMMER_MS );
+    }
+
     /* Update our RTC via NTP, on occasions. */
     if ( time_reached( l_ntp_check ) )
     {
@@ -102,6 +113,23 @@ int main()
         /* Schedule the next check. */
         l_ntp_check = make_timeout_time_ms( UC_NTP_CHECK_MS );
       }
+    }
+
+    /* Process any user input. */
+    if ( time_reached( l_input_delay ) )
+    {
+      /* First up, brightness controls, done on the LUX buttons. */
+      if ( l_unicorn->is_pressed( pimoroni::GalacticUnicorn::SWITCH_BRIGHTNESS_UP ) )
+      {
+        display_brighter();
+      }
+      if ( l_unicorn->is_pressed( pimoroni::GalacticUnicorn::SWITCH_BRIGHTNESS_DOWN ) )
+      {
+        display_dimmer();
+      }
+
+      /* Wait a little while until we check again. */
+      l_input_delay = make_timeout_time_ms( UC_INPUT_DELAY_MS );
     }
 
     /* Rendering, which we do fairly leisurely. */
