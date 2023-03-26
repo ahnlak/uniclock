@@ -186,6 +186,9 @@ void time_ntp_response_cb( void *p_state, struct udp_pcb *p_socket,
                           l_ntptime[2] << 8 | l_ntptime[3];
   }
 
+  /* Need to free the pbuf that we were passed. */
+  pbuf_free( p_buffer );
+
   /* All done. */
   return;
 }
