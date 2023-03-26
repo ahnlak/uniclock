@@ -29,7 +29,7 @@ the current setting and stop you going too far. This setting will be saved you y
 The 'D' button on the left hand side will briefly display the current date.
 
 
-## WiFi Configuration
+## Configuration
 
 To make things easier to commission, UniClock mounts as a drive when plugged
 into your computer's USB port. This allows you to modify the configuration
