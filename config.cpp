@@ -40,6 +40,13 @@ uint32_t  config_read( uc_config_t *p_config )
   char      l_buffer[128];
   uint32_t  l_filestamp;
 
+  /* Fill in some defaults for the configuration. */
+  strcpy( p_config->wifi_ssid, "unknown" );
+  strcpy( p_config->wifi_password, "unknown" );
+  strcpy( p_config->ntp_server, "pool.ntp.org" );
+  p_config->utc_offset_minutes = 0;
+  strcpy( p_config->date_format, "dmy" );
+
   /* Try to open up the file. */
   usb_debug( "Reading configuration file %s", UC_CONFIG_FILENAME );
   ufs_mount();
@@ -71,13 +78,19 @@ uint32_t  config_read( uc_config_t *p_config )
       if ( strncmp( l_buffer, "NTP_SERVER: ", 12 ) == 0 )
       {
         strncpy( p_config->ntp_server, l_buffer+12, UC_NTPSERVER_MAXLEN );
-        p_config->wifi_password[UC_NTPSERVER_MAXLEN] = '\0';
+        p_config->ntp_server[UC_NTPSERVER_MAXLEN] = '\0';
         usb_debug( "Setting NTP_SERVER to %s", p_config->ntp_server );
       }
       if ( strncmp( l_buffer, "UTC_OFFSET: ", 12 ) == 0 )
       {
         p_config->utc_offset_minutes = atoi( l_buffer+12 );
         usb_debug( "Setting UTC_OFFSET to %d", p_config->utc_offset_minutes );
+      }
+      if ( strncmp( l_buffer, "DATE_FORMAT: ", 13 ) == 0 )
+      {
+        strncpy( p_config->date_format, l_buffer+13, UC_DATE_FORMAT_MAXLEN );
+        p_config->date_format[UC_DATE_FORMAT_MAXLEN] = '\0';
+        usb_debug( "Setting DATE_FORMAT to %s", p_config->date_format );
       }
     }
 
@@ -86,17 +99,7 @@ uint32_t  config_read( uc_config_t *p_config )
   }
   else
   {
-    /* Fill in some defaults for the configuration. */
-    strcpy( p_config->wifi_ssid, "unknown" );
-    usb_debug( "Defaulting SSID to %s", p_config->wifi_ssid );
-    strcpy( p_config->wifi_password, "unknown" );
-    usb_debug( "Defaulting PASSWORD to %s", p_config->wifi_password );
-    strcpy( p_config->ntp_server, "pool.ntp.org" );
-    usb_debug( "Defaulting NTP_SERVER to %s", p_config->ntp_server );
-    p_config->utc_offset_minutes = 0;
-    usb_debug( "Defaulting UTC_OFFSET to %d", p_config->utc_offset_minutes );
-
-    /* And write them into the file. */
+    /* Just write the defaults into the file, then. */
     if ( !config_write( p_config ) )
     {
       ufs_unmount();
@@ -147,6 +150,8 @@ bool config_write( const uc_config_t *p_config )
   snprintf( l_buffer, 127, "NTP_SERVER: %s\n", p_config->ntp_server );
   f_puts( l_buffer, &l_fptr );
   snprintf( l_buffer, 127, "UTC_OFFSET: %d\n", p_config->utc_offset_minutes );
+  f_puts( l_buffer, &l_fptr );
+  snprintf( l_buffer, 127, "DATE_FORMAT: %s\n", p_config->date_format );
   f_puts( l_buffer, &l_fptr );
 
   /* Close it up. */

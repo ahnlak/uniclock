@@ -48,6 +48,7 @@ int main()
   absolute_time_t             l_next_render = nil_time;
   pimoroni::PicoGraphics     *l_graphics;
   pimoroni::GalacticUnicorn  *l_unicorn;
+  int16_t                     l_new_offset;
 
 
   /* Initial setup stuff - first get Unicorn and Graphics objects. */
@@ -131,13 +132,23 @@ int main()
       /* Adjust the timezone using the volume buttons, like clock.py */
       if ( l_unicorn->is_pressed( pimoroni::GalacticUnicorn::SWITCH_VOLUME_UP ) )
       {
-        time_set_utc_offset( &m_config, time_get_utc_offset() + 60 );
+        /* With this basic adjustment, offsets are locked to hour-long steps. */
+        l_new_offset = ( ( time_get_utc_offset() / 60 ) + 1 ) * 60;
+        time_set_utc_offset( &m_config, l_new_offset );
         display_timezone();
       }
       if ( l_unicorn->is_pressed( pimoroni::GalacticUnicorn::SWITCH_VOLUME_DOWN ) )
       {
-        time_set_utc_offset( &m_config, time_get_utc_offset() - 60 );
+        /* With this basic adjustment, offsets are locked to hour-long steps. */
+        l_new_offset = ( ( time_get_utc_offset() / 60 ) - 1 ) * 60;
+        time_set_utc_offset( &m_config, l_new_offset );
         display_timezone();
+      }
+
+      /* Other displays; the 'D' button will briefly show you the date. */
+      if ( l_unicorn->is_pressed( pimoroni::GalacticUnicorn::SWITCH_D ) )
+      {
+        display_date();
       }
 
       /* Wait a little while until we check again. */
@@ -148,7 +159,7 @@ int main()
     if ( time_reached( l_next_render ) )
     {
       /* Draw the display. */
-      display_render();
+      display_render( &m_config );
 
       /* Push the display out to the unicorn. */
       l_unicorn->update( l_graphics );

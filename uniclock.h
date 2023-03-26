@@ -24,6 +24,7 @@
 #define UC_SSID_MAXLEN        32
 #define UC_PASSWORD_MAXLEN    64
 #define UC_NTPSERVER_MAXLEN   64
+#define UC_DATE_FORMAT_MAXLEN 4
 
 #define UC_CONFIG_CHECK_MS    5000
 #define UC_RENDER_MS          250
@@ -62,6 +63,7 @@ typedef struct
   char    wifi_password[UC_PASSWORD_MAXLEN+1];
   char    ntp_server[UC_NTPSERVER_MAXLEN+1];
   int16_t utc_offset_minutes;
+  char    date_format[UC_DATE_FORMAT_MAXLEN+1];
 } uc_config_t;
 
 typedef struct
@@ -79,11 +81,12 @@ bool      config_write( const uc_config_t * );
 bool      config_changed( uint32_t );
 
 void      display_init( pimoroni::GalacticUnicorn *, pimoroni::PicoGraphics * );
-void      display_render( void );
+void      display_render( const uc_config_t * );
 void      display_update_brightness( void );
 void      display_dimmer( void );
 void      display_brighter( void );
 void      display_timezone( void );
+void      display_date( void );
 
 void      time_init( void );
 bool      time_check_sync( const uc_config_t * );
