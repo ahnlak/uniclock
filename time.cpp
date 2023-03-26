@@ -34,6 +34,7 @@
 /* Module variables. */
 
 static absolute_time_t    m_next_ntp_check = nil_time;
+static int16_t            m_utc_offset = 0;
 
 
 /* Local / callback functions; not expected to be called from outside. */
@@ -73,6 +74,53 @@ void time_ntp_request( uc_ntpstate_t *p_ntpstate )
 
 
 /*
+ * add_minutes_to_datetime - adds a set number of minutes to the provided
+ *                           datetime.
+ */
+
+void time_add_minutes_to_datetime( datetime_t *p_datetime, int16_t p_minutes )
+{
+  time_t      l_time;
+  struct tm   l_tmstruct;
+  struct tm  *l_tmptr;
+
+  /*
+   * Unfortunately, the datetime_t structure isn't easy to add arbitrary 
+   * minutes to so we need to convert it into a time_t, do the sums and then
+   * convert it back.
+   */
+  l_tmstruct.tm_year = p_datetime->year;
+  l_tmstruct.tm_mon  = p_datetime->month;
+  l_tmstruct.tm_mday = p_datetime->day;
+  l_tmstruct.tm_wday = p_datetime->dotw;
+  l_tmstruct.tm_hour = p_datetime->hour;
+  l_tmstruct.tm_min  = p_datetime->min;
+  l_tmstruct.tm_sec  = p_datetime->sec;
+
+  /* Convert all that into a time_t, which is a simple second-since-epoch. */
+  l_time = mktime( &l_tmstruct );
+
+  /* Add in the offset. */
+  l_time += ( p_minutes * 60 );
+
+  /* And convert it back. */
+  l_tmptr = gmtime( &l_time );
+
+  /* Fill in the datetime struct. */
+  p_datetime->year  = l_tmptr->tm_year;
+  p_datetime->month = l_tmptr->tm_mon;
+  p_datetime->day   = l_tmptr->tm_mday;
+  p_datetime->dotw  = l_tmptr->tm_wday;
+  p_datetime->hour  = l_tmptr->tm_hour;
+  p_datetime->min   = l_tmptr->tm_min;
+  p_datetime->sec   = l_tmptr->tm_sec;
+
+  /* All done. */
+  return;
+}
+
+
+/*
  * set_rtc_by_utc - sets the RTC to the provided time, applying our current
  *                  timezone appropriately.
  */
@@ -81,6 +129,9 @@ void time_set_rtc_by_utc( time_t p_utctime )
 {
   datetime_t    l_datetime;
   struct tm    *l_tmstruct;
+
+  /* Add the current UTC offset (in minutes) to that time. */
+  p_utctime += ( m_utc_offset * 60 );
 
   /* Convert the time_t into a more useful structure. */
   l_tmstruct = gmtime( &p_utctime );
@@ -352,5 +403,64 @@ bool time_check_sync( const uc_config_t *p_config )
   return false;
 }
 
+
+/*
+ * set_timezone - updates the clock to use the specified timezone; this should
+ *                be one of the standard timezone strings (e.g. 'Europe/London')
+ *                that is recognised by worldtimeapi.org
+ */
+
+void time_set_timezone( const char *p_timezone )
+{
+  /* All done. */
+  return;
+}
+
+
+/*
+ * set_utc_offset - defines the offset we apply to UTC to determine local time.
+ *                  This is applied directly to the RTC, at time of setting and
+ *                  whenever we fetch a fresh time via NTP.
+ *                  This is considerably easier than applying it to the RTC
+ *                  every time we look at the clock!
+ *                  Note that this value is given in minutes, to accomodate the
+ *                  freaky timezones that shift by fractions of an hour.
+ */
+
+void time_set_utc_offset( uc_config_t *p_config, int16_t p_offset )
+{
+  int16_t     l_change;
+  datetime_t  l_datetime;
+
+  /* Sanity check first; if the requested offset is out of bounds, return. */
+  if ( ( p_offset < UC_TZ_OFFSET_MIN_MN ) || ( p_offset > UC_TZ_OFFSET_MAX_MN ) )
+  {
+    return;
+  }
+
+  /* Work out the change between the current offset and the new one. */
+  l_change = p_offset - m_utc_offset;
+
+  /* Apply this to the current datetime held by the RTC. */
+  rtc_get_datetime( &l_datetime );
+  time_add_minutes_to_datetime( &l_datetime, l_change );
+  rtc_set_datetime( &l_datetime );
+
+  /* Update the configuration to reflect this new setting. */
+  if ( p_config != nullptr )
+  {
+    p_config->utc_offset_minutes = p_offset;
+    config_write( p_config );
+  }
+
+  /* Simples. Now, we save this new offset and we're done. */
+  m_utc_offset = p_offset;
+  return;
+}
+
+int16_t time_get_utc_offset( void )
+{
+  return m_utc_offset;
+}
 
 /* End of file time.cpp */

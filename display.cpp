@@ -165,26 +165,6 @@ void display_render( void )
   m_graphics->set_pen( m_black_pen );
   m_graphics->clear();
 
-  /* If the brightness adjustment display is required, draw that. */
-  if ( m_brightness_display > 0 )
-  {
-    /* Draw a vertical bar, height based on current brightness. */
-    m_graphics->set_pen( m_white_pen );
-    for ( l_index = 0; l_index < pimoroni::GalacticUnicorn::HEIGHT; l_index++ )
-    {
-      if ( l_index <= ( m_base_brightness * pimoroni::GalacticUnicorn::HEIGHT ) )
-      {
-        m_graphics->pixel( pimoroni::Point(
-          pimoroni::GalacticUnicorn::WIDTH - 1,
-          pimoroni::GalacticUnicorn::HEIGHT - l_index - 1
-        ) );
-      }
-    }
-
-    /* Count down the frames so we eventually stop displaying it. */
-    m_brightness_display--;
-  }
-
   /* Exactly what we draw now depends on our display mode. */
   switch( m_display_mode )
   {
@@ -261,6 +241,29 @@ void display_render( void )
       }
 
       break;
+  }
+
+  /* 
+   * If the brightness adjustment display is required, draw that. We do this at
+   * the end to make sure it overlays on whatever else we're showing.
+   */
+  if ( m_brightness_display > 0 )
+  {
+    /* Draw a vertical bar, height based on current brightness. */
+    m_graphics->set_pen( m_white_pen );
+    for ( l_index = 0; l_index < pimoroni::GalacticUnicorn::HEIGHT; l_index++ )
+    {
+      if ( l_index <= ( m_base_brightness * pimoroni::GalacticUnicorn::HEIGHT ) )
+      {
+        m_graphics->pixel( pimoroni::Point(
+          pimoroni::GalacticUnicorn::WIDTH - 1,
+          pimoroni::GalacticUnicorn::HEIGHT - l_index - 1
+        ) );
+      }
+    }
+
+    /* Count down the frames so we eventually stop displaying it. */
+    m_brightness_display--;
   }
 
   /* All done. */
@@ -342,6 +345,17 @@ void display_brighter( void )
 
   /* All done. */
   return;  
+}
+
+
+/*
+ * timezone - show the currently set timezone, for a period of time.
+ */
+
+void display_timezone( void )
+{
+  /* All done. */
+  return;
 }
 
 

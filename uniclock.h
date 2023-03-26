@@ -30,11 +30,13 @@
 #define UC_INPUT_DELAY_MS     250
 #define UC_DIMMER_MS          5000
 #define UC_NTP_CHECK_MS       60000
-#define UC_NTP_REFRESH_MS     60000
-//#define UC_NTP_REFRESH_MS     3600000
+#define UC_NTP_REFRESH_MS     43200000L
 #define UC_NTP_EPOCH_OFFSET   2208988800L
 #define UC_NTP_PORT           123
 #define UC_NTP_PACKAGE_LEN    48
+
+#define UC_TZ_OFFSET_MAX_MN   840
+#define UC_TZ_OFFSET_MIN_MN   -720
 
 #define UC_HUE_MIDDAY         1.1f
 #define UC_HUE_MIDNIGHT       0.8f
@@ -73,6 +75,7 @@ typedef struct
 /* Function prototypes. */
 
 uint32_t  config_read( uc_config_t * );
+bool      config_write( const uc_config_t * );
 bool      config_changed( uint32_t );
 
 void      display_init( pimoroni::GalacticUnicorn *, pimoroni::PicoGraphics * );
@@ -80,9 +83,13 @@ void      display_render( void );
 void      display_update_brightness( void );
 void      display_dimmer( void );
 void      display_brighter( void );
+void      display_timezone( void );
 
 void      time_init( void );
 bool      time_check_sync( const uc_config_t * );
+void      time_set_timezone( const char * );
+void      time_set_utc_offset( uc_config_t *, int16_t );
+int16_t   time_get_utc_offset( void );
 
 
 /* End of file uniclock.h */

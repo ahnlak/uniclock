@@ -27,6 +27,7 @@
 /* Module variables. */
 
 static bool     m_mounted = true;
+static bool     m_fs_changed = false;
 
 
 /* Functions.*/
@@ -54,9 +55,10 @@ void tud_msc_inquiry_cb( uint8_t p_lun, uint8_t p_vendor_id[8],
 
 bool tud_msc_test_unit_ready_cb( uint8_t p_lun )
 {
-  if( !m_mounted )
+  if( m_fs_changed || !m_mounted )
   {
     tud_msc_set_sense( p_lun, SCSI_SENSE_NOT_READY, 0x3a, 0x00 );
+    m_fs_changed = false;
     return false;
   }
 
@@ -185,6 +187,21 @@ void usb_debug( const char *p_message, ... )
     }
     l_sentbytes += tud_cdc_write( l_buffer + l_sentbytes, l_msglen - l_sentbytes );
   }
+
+  /* All done. */
+  return;
+}
+
+
+/*
+ * fs_changed - set a flag that tinyusb can use to inform the host that data
+ *              on the filesystem has changed locally.
+ */
+
+void usb_fs_changed( void )
+{
+  /* Very simple flag set. */
+  m_fs_changed = true;
 
   /* All done. */
   return;

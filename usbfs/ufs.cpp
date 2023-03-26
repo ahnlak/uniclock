@@ -45,7 +45,7 @@ void ufs_init( void )
   MKFS_PARM l_options;
 
   /* Attempt to mount it. */
-  l_result = f_mount( &m_fatfs, "", 1 );
+  l_result = ufs_mount();
 
   /* If there was no filesystem, make one. */
   if ( l_result == FR_NO_FILESYSTEM )
@@ -59,11 +59,14 @@ void ufs_init( void )
     }
 
     /* And re-mount. */
-    f_mount( &m_fatfs, "", 1 );
+    ufs_mount();
   }
 
   /* Set the label on the volume to something sensible. */
   f_setlabel( UFS_LABEL );
+
+  /* But don't leave it mounted. */
+  ufs_unmount();
 
   /* All done. */
   return;
@@ -71,12 +74,22 @@ void ufs_init( void )
 
 
 /*
- * remount - need to remount the filesystem to pick up external changes.
+ * mount - mount the filesystem.
  */
 
-void ufs_remount( void )
+FRESULT ufs_mount( void )
 {
-  f_mount( &m_fatfs, "", 1 );
+  return f_mount( &m_fatfs, "", 1 );
+}
+
+
+/*
+ * unmount - unmount the filesystem.
+ */
+
+FRESULT ufs_unmount( void )
+{
+  return f_mount( 0, "", 0 );
 }
 
 

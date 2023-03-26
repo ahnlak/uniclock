@@ -42,6 +42,7 @@ uint32_t  config_read( uc_config_t *p_config )
 
   /* Try to open up the file. */
   usb_debug( "Reading configuration file %s", UC_CONFIG_FILENAME );
+  ufs_mount();
   l_result = f_open( &l_fptr, UC_CONFIG_FILENAME, FA_READ );
   if ( l_result == FR_OK )
   {
@@ -85,13 +86,6 @@ uint32_t  config_read( uc_config_t *p_config )
   }
   else
   {
-    /* Probably means the file doesn't exist - so, err, create it? */
-    l_result = f_open( &l_fptr, UC_CONFIG_FILENAME, FA_CREATE_ALWAYS | FA_WRITE );
-    if ( l_result != FR_OK )
-    {
-      return 0;
-    }
-
     /* Fill in some defaults for the configuration. */
     strcpy( p_config->wifi_ssid, "unknown" );
     usb_debug( "Defaulting SSID to %s", p_config->wifi_ssid );
@@ -103,29 +97,65 @@ uint32_t  config_read( uc_config_t *p_config )
     usb_debug( "Defaulting UTC_OFFSET to %d", p_config->utc_offset_minutes );
 
     /* And write them into the file. */
-    snprintf( l_buffer, 127, "SSID: %s\n", p_config->wifi_ssid );
-    f_puts( l_buffer, &l_fptr );
-    snprintf( l_buffer, 127, "PASSWORD: %s\n", p_config->wifi_password );
-    f_puts( l_buffer, &l_fptr );
-    snprintf( l_buffer, 127, "NTP_SERVER: %s\n", p_config->ntp_server );
-    f_puts( l_buffer, &l_fptr );
-    snprintf( l_buffer, 127, "UTC_OFFSET: %d\n", p_config->utc_offset_minutes );
-    f_puts( l_buffer, &l_fptr );
-
-    /* Close it up. */
-    f_close( &l_fptr );
+    if ( !config_write( p_config ) )
+    {
+      ufs_unmount();
+      return 0;
+    }
   }
 
   /* Lastly, stat the file and return the timestamp on it. */
   l_result = f_stat( UC_CONFIG_FILENAME, &l_fileinfo );
   if ( l_result != FR_OK )
   {
+    ufs_unmount();
     return 0;
   }
 
   /* Merge fdate and ftime (both 2 bytes long) into a single DWORD. */
   l_filestamp = ( l_fileinfo.fdate << 16 ) | l_fileinfo.ftime;
+  ufs_unmount();
   return l_filestamp;
+}
+
+
+/*
+ * write - saves the provided configuration, overwriting any config that is
+ *         currently there.
+ */
+
+bool config_write( const uc_config_t *p_config )
+{
+  FIL       l_fptr;
+  FRESULT   l_result;
+  char      l_buffer[128];
+
+  /* So, try to open it for writing, creating as required. */
+  ufs_mount();
+  l_result = f_open( &l_fptr, UC_CONFIG_FILENAME, FA_CREATE_ALWAYS | FA_WRITE );
+  if ( l_result != FR_OK )
+  {
+    ufs_unmount();
+    return false;
+  }
+
+  /* And write our values into the file. */
+  snprintf( l_buffer, 127, "SSID: %s\n", p_config->wifi_ssid );
+  f_puts( l_buffer, &l_fptr );
+  snprintf( l_buffer, 127, "PASSWORD: %s\n", p_config->wifi_password );
+  f_puts( l_buffer, &l_fptr );
+  snprintf( l_buffer, 127, "NTP_SERVER: %s\n", p_config->ntp_server );
+  f_puts( l_buffer, &l_fptr );
+  snprintf( l_buffer, 127, "UTC_OFFSET: %d\n", p_config->utc_offset_minutes );
+  f_puts( l_buffer, &l_fptr );
+
+  /* Close it up. */
+  f_close( &l_fptr );
+  ufs_unmount();
+  usb_fs_changed();
+
+  /* And we're done! */
+  return true;
 }
 
 
@@ -141,8 +171,9 @@ bool config_changed( uint32_t p_timestamp )
   uint32_t  l_filestamp;
 
   /* Stat the configuration file. */
-  ufs_remount();
+  ufs_mount();
   l_result = f_stat( UC_CONFIG_FILENAME, &l_fileinfo );
+  ufs_unmount();
   if ( l_result != FR_OK )
   {
     return true;

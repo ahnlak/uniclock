@@ -68,7 +68,7 @@ int main()
 
   /* Fetch the current configuration. */
   m_config_stamp = config_read( &m_config );
-
+  time_set_utc_offset( nullptr, m_config.utc_offset_minutes );
 
   /* Now enter the main control loop; we normally never leave this. */
   while( true )
@@ -86,7 +86,7 @@ int main()
         m_config_stamp = config_read( &m_config );
 
         /* And apply any immediate changes. */
-
+        time_set_utc_offset( nullptr, m_config.utc_offset_minutes );
       }
 
       /* Schedule the next check for a minutes time. */
@@ -126,6 +126,18 @@ int main()
       if ( l_unicorn->is_pressed( pimoroni::GalacticUnicorn::SWITCH_BRIGHTNESS_DOWN ) )
       {
         display_dimmer();
+      }
+
+      /* Adjust the timezone using the volume buttons, like clock.py */
+      if ( l_unicorn->is_pressed( pimoroni::GalacticUnicorn::SWITCH_VOLUME_UP ) )
+      {
+        time_set_utc_offset( &m_config, time_get_utc_offset() + 60 );
+        display_timezone();
+      }
+      if ( l_unicorn->is_pressed( pimoroni::GalacticUnicorn::SWITCH_VOLUME_DOWN ) )
+      {
+        time_set_utc_offset( &m_config, time_get_utc_offset() - 60 );
+        display_timezone();
       }
 
       /* Wait a little while until we check again. */
