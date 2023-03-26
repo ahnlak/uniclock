@@ -82,5 +82,5 @@ jobs:
       uses: softprops/action-gh-release@v1
       with:
         files: |
-          ./build/*.zip 
-          ./build/*.tar.gz
+          ${{runner.workspace}}/build/*.zip 
+          ${{runner.workspace}}/build/*.tar.gz
