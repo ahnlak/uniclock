@@ -90,7 +90,7 @@ void time_add_minutes_to_datetime( datetime_t *p_datetime, int16_t p_minutes )
    * convert it back.
    */
   l_tmstruct.tm_year = p_datetime->year - 1900;
-  l_tmstruct.tm_mon  = p_datetime->month;
+  l_tmstruct.tm_mon  = p_datetime->month - 1;
   l_tmstruct.tm_mday = p_datetime->day;
   l_tmstruct.tm_wday = p_datetime->dotw;
   l_tmstruct.tm_hour = p_datetime->hour;
@@ -108,7 +108,7 @@ void time_add_minutes_to_datetime( datetime_t *p_datetime, int16_t p_minutes )
 
   /* Fill in the datetime struct. */
   p_datetime->year  = l_tmptr->tm_year + 1900;
-  p_datetime->month = l_tmptr->tm_mon;
+  p_datetime->month = l_tmptr->tm_mon + 1;
   p_datetime->day   = l_tmptr->tm_mday;
   p_datetime->dotw  = l_tmptr->tm_wday;
   p_datetime->hour  = l_tmptr->tm_hour;
@@ -138,7 +138,7 @@ void time_set_rtc_by_utc( time_t p_utctime )
 
   /* Fill in the datetime struct. */
   l_datetime.year  = l_tmstruct->tm_year + 1900;
-  l_datetime.month = l_tmstruct->tm_mon;
+  l_datetime.month = l_tmstruct->tm_mon + 1;
   l_datetime.day   = l_tmstruct->tm_mday;
   l_datetime.dotw  = l_tmstruct->tm_wday;
   l_datetime.hour  = l_tmstruct->tm_hour;
